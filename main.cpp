@@ -305,14 +305,16 @@ void find_st_deviation() {        // O(N)
 
 void find_interquartile_range() {     // O(1)
     int half = NUM_OF_INTS / 2;
+    int first_quarter = half/2;
+    int third_quarter = NUM_OF_INTS - first_quarter;
     double left_median, right_median;
     if(half % 2 == 1 ){
-        left_median = my_array.at(half/2);
-        right_median = my_array.at(NUM_OF_INTS - half/2 - 1);
+        left_median = my_array.at(first_quarter);
+        right_median = my_array.at(third_quarter - 1);
     }
     else {
-        right_median = (double)(my_array.at(NUM_OF_INTS - half/2) + my_array.at(NUM_OF_INTS - half/2 - 1))/2;
-        left_median =  (double)(my_array.at(half/2) + my_array.at(half/2 - 1))/2;
+        right_median = (double)(my_array.at(third_quarter) + my_array.at(third_quarter - 1))/2;
+        left_median =  (double)(my_array.at(first_quarter) + my_array.at(first_quarter - 1))/2;
     }
     outputs[9] = right_median - left_median;
     return;
