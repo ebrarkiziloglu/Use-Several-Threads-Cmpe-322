@@ -83,7 +83,7 @@ void *executor_five(void *param) {
 int main(int argc, char *argv[]) {
     NUM_OF_INTS = stoi(argv[1]);
     NUM_OF_THREADS = stoi(argv[2]);  
-    if (NUM_OF_THREADS > 10 or NUM_OF_THREADS < 1) {
+    if (NUM_OF_THREADS > 10 or NUM_OF_THREADS < 0) {
         cout << "Invalid number of threads. Please specify the number of threads as 1, 5, or 10.\n";
         return 0;
     }
@@ -101,87 +101,95 @@ int main(int argc, char *argv[]) {
     }
     struct timespec start_time, end_time;
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time);
-    if(NUM_OF_THREADS == 1) {
-        five_functions five_function_struct;
-        five_function_struct.function_1 = functionPointers[2];             // range: min & max
-        five_function_struct.function_2 = functionPointers[3];             // median
-        five_function_struct.function_3 = functionPointers[7];             // st_dev : sum & art_mean
-        five_function_struct.function_4 = functionPointers[9];             // interquartile_range
-        five_function_struct.function_5 = functionPointers[10];            // harm_mean, mode
-        pthread_create(&workers[0], NULL, executor_five, &five_function_struct);
+    if(NUM_OF_THREADS == 0) {           // No threads will be created
+        for(int i = 0; i < 10; i ++){ 
+            functionPointers[i]();
+        }
     }
-    else if(NUM_OF_THREADS == 2) {
-        five_functions five_function_struct;
-        two_functions two_function_struct;
+    else {
+        if(NUM_OF_THREADS == 1) {
+            five_functions five_function_struct;
+            five_function_struct.function_1 = functionPointers[2];             // range: min & max
+            five_function_struct.function_2 = functionPointers[3];             // median
+            five_function_struct.function_3 = functionPointers[7];             // st_dev : sum & art_mean
+            five_function_struct.function_4 = functionPointers[9];             // interquartile_range
+            five_function_struct.function_5 = functionPointers[10];            // harm_mean, mode
+            pthread_create(&workers[0], NULL, executor_five, &five_function_struct);
+        }
+        else if(NUM_OF_THREADS == 2) {
+            five_functions five_function_struct;
+            two_functions two_function_struct;
 
-        five_function_struct.function_1 = functionPointers[2];             // range: min & max
-        five_function_struct.function_2 = functionPointers[7];             // st_dev : sum & art_mean
-        five_function_struct.function_3 = functionPointers[9];             // interquartile_range
-        five_function_struct.function_4 = functionPointers[11];            // empty function
-        five_function_struct.function_5 = functionPointers[11];            // empty function
+            five_function_struct.function_1 = functionPointers[2];             // range: min & max
+            five_function_struct.function_2 = functionPointers[7];             // st_dev : sum & art_mean
+            five_function_struct.function_3 = functionPointers[9];             // interquartile_range
+            five_function_struct.function_4 = functionPointers[11];            // empty function
+            five_function_struct.function_5 = functionPointers[11];            // empty function
 
-        two_function_struct.function_1 = functionPointers[10];             // harm_mean, mode
-        two_function_struct.function_2 = functionPointers[3];              // median
+            two_function_struct.function_1 = functionPointers[10];             // harm_mean, mode
+            two_function_struct.function_2 = functionPointers[3];              // median
 
-        pthread_create(&workers[0], NULL, executor_five, &five_function_struct);
-        pthread_create(&workers[1], NULL, executor_two, &two_function_struct);
+            pthread_create(&workers[0], NULL, executor_five, &five_function_struct);
+            pthread_create(&workers[1], NULL, executor_two, &two_function_struct);
 
-    }
-    else { 
-        indexes[0] = 2;
-        indexes[2] = 7;
-        indexes[4] = 9;
-        switch (NUM_OF_THREADS)
-        {
-        case 3: {
+        }
+        else { 
             indexes[0] = 2;
-            indexes[1] = 7;
-            indexes[2] = 9;
-            indexes[3] = 10;
-            indexes[4] = 3;
-            indexes[5] = 11;
-            break;
+            indexes[2] = 7;
+            indexes[4] = 9;
+            switch (NUM_OF_THREADS)
+            {
+            case 3: {
+                indexes[0] = 2;
+                indexes[1] = 7;
+                indexes[2] = 9;
+                indexes[3] = 10;
+                indexes[4] = 3;
+                indexes[5] = 11;
+                break;
+                }
+            case 4: {
+                indexes[1] = 3;
+                indexes[6] = 10;
+                break;
+            }    
+            case 5: {
+                for(int i = 0; i < NUM_OF_THREADS; i++) {
+                    indexes[2*i] = 2*i;
+                    indexes[2*i+1] = 2*i+1;
+                }
+                break;
             }
-        case 4: {
-            indexes[1] = 3;
-            indexes[6] = 10;
-            break;
-        }    
-        case 5: {
-            for(int i = 0; i < NUM_OF_THREADS; i++) {
-                indexes[2*i] = 2*i;
-                indexes[2*i+1] = 2*i+1;
+            case 10: {
+                indexes[18] = 6;
+            } 
+            case 9: {
+                indexes[16] = 4;
+            }  
+            case 8: {
+                indexes[14] = 0;
+            }   
+            case 7: {
+                indexes[12] = 1;
+            }   
+            case 6: {
+                indexes[6] = 3;
+                indexes[8] = 5;
+                indexes[10] = 8;
+                break;
+            }   
             }
-            break;
+            for(int i = 0; i < NUM_OF_THREADS; i ++) { 
+                struct_arr[i].function_1 = functionPointers[indexes[2*i]];
+                struct_arr[i].function_2 = functionPointers[indexes[2*i+1]];            // empty function
+                pthread_create(&workers[i], NULL, executor_two, &struct_arr[i]);
+            }
         }
-        case 10: {
-            indexes[18] = 6;
-        } 
-        case 9: {
-            indexes[16] = 4;
-        }  
-        case 8: {
-            indexes[14] = 0;
-        }   
-        case 7: {
-            indexes[12] = 1;
-        }   
-        case 6: {
-            indexes[6] = 3;
-            indexes[8] = 5;
-            indexes[10] = 8;
-            break;
-        }   
-        }
-        for(int i = 0; i < NUM_OF_THREADS; i ++) { 
-            struct_arr[i].function_1 = functionPointers[indexes[2*i]];
-            struct_arr[i].function_2 = functionPointers[indexes[2*i+1]];            // empty function
-            pthread_create(&workers[i], NULL, executor_two, &struct_arr[i]);
+        for(int i = 0; i < NUM_OF_THREADS; i ++) {
+            pthread_join(workers[i], NULL);
         }
     }
-    for(int i = 0; i < NUM_OF_THREADS; i ++) {
-        pthread_join(workers[i], NULL);
-    }
+
     ofstream outfile ("output.txt");
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end_time);
     duration_of_exec = ( 1000.0*end_time.tv_sec + 1e-6*end_time.tv_nsec
