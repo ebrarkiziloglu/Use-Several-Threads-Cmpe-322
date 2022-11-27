@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     NUM_OF_INTS = stoi(argv[1]);
     NUM_OF_THREADS = stoi(argv[2]);  
     if (NUM_OF_THREADS > 10 or NUM_OF_THREADS < 0) {
-        cout << "Invalid number of threads. Please specify the number of threads as 1, 5, or 10.\n";
+        cout << "EXCEPTION: Invalid number of threads. Please specify the number of threads as 1, 5, or 10.\n";
         return 0;
     }
 
