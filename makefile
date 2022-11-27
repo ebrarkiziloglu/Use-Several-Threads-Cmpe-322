@@ -1,2 +1,2 @@
-threads: main.cpp
-	g++ main.cpp -o threads
+threads: threads.cpp
+	g++ threads.cpp -o 322 -std=c++11
