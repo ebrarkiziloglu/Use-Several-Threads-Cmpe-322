@@ -19,12 +19,12 @@ int NUM_OF_THREADS = 0;     // number of threads
 double duration_of_exec;            // duration of the execution
 vector<int> my_array;       // our global array
 
-struct two_functions{
+struct two_functions{       // used for threads with 2 functions
     void (*function_1)();
     void (*function_2)();
 };
 
-struct five_functions{
+struct five_functions{      // used for threads with 5 functions
     void (*function_1)();
     void (*function_2)();
     void (*function_3)();
@@ -36,6 +36,7 @@ struct five_functions{
 // 0- (int)min, 1- (int)max, 2- (int)range, 3- (int)mode, 4- median,
 // 5- (int)sum, 6- art_mean, 7- harm_mean, 8- st_deviation, 9 - interquartile_range
 double outputs[10];
+
 void print_outputs(ofstream& print_to_file, double duration);
 void find_min();
 void find_max();
@@ -63,14 +64,14 @@ void (*functionPointers[12])() = {find_min,                     // 0
                                 calculate_mode_and_harm_mean,   // 10
                                 empty_func};                    // 11
 
-void *executor_two(void *param) {
+void *executor_two(void *param) {       // executon method for the threads with 2 functions
     two_functions strct = *((two_functions *)param);
     strct.function_1();
     strct.function_2();
     pthread_exit(0);
 }
 
-void *executor_five(void *param) {
+void *executor_five(void *param) {      // executon method for the threads with 5 functions
     five_functions strct = *((five_functions *)param);
     strct.function_1();
     strct.function_2();
@@ -87,20 +88,20 @@ int main(int argc, char *argv[]) {
         cout << "EXCEPTION: Invalid number of threads. Please specify the number of threads as 1, 5, or 10.\n";
         return 0;
     }
-
+    // Creates the random array:
     for(int i = 0; i < NUM_OF_INTS; i ++) {
         int random_int = rand() % 9001 + 1000; // range is 1000-10000
         my_array.push_back(random_int);
     }
     sort(my_array.begin(), my_array.end());     // Sorts in NlogN complexity
-    pthread_t workers[NUM_OF_THREADS];
-    two_functions struct_arr[NUM_OF_THREADS];
-    int indexes[2 * NUM_OF_THREADS];
+    pthread_t workers[NUM_OF_THREADS];          // keeps the thread ids
+    two_functions struct_arr[NUM_OF_THREADS];   // keeps the thread structs to be generated
+    int indexes[2 * NUM_OF_THREADS];            // keeps the indexes of the function pointers to be used from the functionPointers array
     for (int i = 1; i < 2*NUM_OF_THREADS ; i+=2){
-        indexes[i] = 11;
+        indexes[i] = 11;    // initially all indexes show the index 11, which corresponds the empty_func pointer inside the functionPointers array
     }
-    struct timespec start_time, end_time;
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time);
+    struct timespec start_time, end_time;       // keep the execution time
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time);       // start-time
     if(NUM_OF_THREADS == 0) {           // No threads will be created
         for(int i = 0; i < 10; i ++){ 
             functionPointers[i]();
@@ -108,7 +109,7 @@ int main(int argc, char *argv[]) {
     }
     else {
         if(NUM_OF_THREADS == 1) {
-            five_functions five_function_struct;
+            five_functions five_function_struct;        // one thread with 5 functions
             five_function_struct.function_1 = functionPointers[2];             // range: min & max
             five_function_struct.function_2 = functionPointers[3];             // median
             five_function_struct.function_3 = functionPointers[7];             // st_dev : sum & art_mean
@@ -117,8 +118,8 @@ int main(int argc, char *argv[]) {
             pthread_create(&workers[0], NULL, executor_five, &five_function_struct);
         }
         else if(NUM_OF_THREADS == 2) {
-            five_functions five_function_struct;
-            two_functions two_function_struct;
+            five_functions five_function_struct;        // one thread with 5 functions
+            two_functions two_function_struct;          // one thread with 2 functions
 
             five_function_struct.function_1 = functionPointers[2];             // range: min & max
             five_function_struct.function_2 = functionPointers[7];             // st_dev : sum & art_mean
@@ -134,6 +135,7 @@ int main(int argc, char *argv[]) {
 
         }
         else { 
+            // indexes[] array will be used to choose function pointers from the functionPointers array, to put inside threads:
             indexes[0] = 2;
             indexes[2] = 7;
             indexes[4] = 9;
@@ -158,6 +160,9 @@ int main(int argc, char *argv[]) {
                     indexes[2*i] = 2*i;
                     indexes[2*i+1] = 2*i+1;
                 }
+                indexes[5] = 9;
+                indexes[8] = 10;
+                indexes[9] = 11; 
                 break;
             }
             case 10: {
@@ -181,7 +186,7 @@ int main(int argc, char *argv[]) {
             }
             for(int i = 0; i < NUM_OF_THREADS; i ++) { 
                 struct_arr[i].function_1 = functionPointers[indexes[2*i]];
-                struct_arr[i].function_2 = functionPointers[indexes[2*i+1]];            // empty function
+                struct_arr[i].function_2 = functionPointers[indexes[2*i+1]];
                 pthread_create(&workers[i], NULL, executor_two, &struct_arr[i]);
             }
         }
@@ -191,14 +196,14 @@ int main(int argc, char *argv[]) {
     }
 
     ofstream outfile ("output.txt");
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end_time);
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end_time);         // end-time
     duration_of_exec = ( 1000.0*end_time.tv_sec + 1e-6*end_time.tv_nsec
-                - (1000.0*start_time.tv_sec + 1e-6*start_time.tv_nsec) ) / 1000;
+                - (1000.0*start_time.tv_sec + 1e-6*start_time.tv_nsec) ) / 1000;        // execution-time in seconds
     print_outputs(outfile, duration_of_exec);
     return 0;
 }
 
-void print_outputs(ofstream& print_to_file, double duration) {
+void print_outputs(ofstream& print_to_file, double duration) {      // prints the statistics, and the execution-time 
     print_to_file << setprecision(5) << fixed;
     for(int i = 0; i < 10; i++) {
     double result = outputs[i];
@@ -313,6 +318,7 @@ void find_interquartile_range() {     // O(1)
 }
 
 void calculate_mode_and_harm_mean() {   // harm_mean, mode
+    // Combining harm-mean and mode calculations will iterate over the array once, instead of twice.
     double harm_denominator = 0;
     int max_count = 0;
     int count = 1;
@@ -338,4 +344,4 @@ void calculate_mode_and_harm_mean() {   // harm_mean, mode
     return;
 }
 
-void empty_func() {return;}
+void empty_func() {return;}         // this will be needed to fill the functions inside some threads
